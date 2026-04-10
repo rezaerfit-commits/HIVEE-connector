@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hivee Connector</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Hivee Connector</p>
+          <h1>Bridge Hivee Cloud to local OpenClaw</h1>
+          <p class="subtext">
+            This local admin screen is only for pairing, diagnostics, and discovery. End users should use Hivee Cloud.
+          </p>
+        </div>
+        <div id="status-badge" class="badge badge-warn">loading...</div>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <h2>Pair with Hivee Cloud</h2>
+          <label>Hivee Cloud URL</label>
+          <input id="cloudBaseUrl" placeholder="https://cloud.hivee.app" />
+          <label>Pairing token</label>
+          <input id="pairingToken" placeholder="pair_live_xxx" />
+          <div class="row gap">
+            <button id="pairButton">Pair connector</button>
+            <button id="clearPairingButton" class="secondary">Clear pairing</button>
+          </div>
+          <pre id="pairingResult" class="output"></pre>
+        </article>
+
+        <article class="card">
+          <h2>OpenClaw</h2>
+          <p class="muted">Connector uses local discovery and never requires the user to expose OpenClaw publicly by default.</p>
+          <div class="row gap">
+            <button id="discoverButton">Rediscover OpenClaw</button>
+            <button id="refreshButton" class="secondary">Refresh status</button>
+          </div>
+          <pre id="openclawResult" class="output"></pre>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <h2>Status snapshot</h2>
+          <pre id="statusView" class="output tall"></pre>
+        </article>
+
+        <article class="card">
+          <h2>Manual command test</h2>
+          <label>Command type</label>
+          <select id="commandType">
+            <option value="connector.ping">connector.ping</option>
+            <option value="openclaw.discover">openclaw.discover</option>
+            <option value="openclaw.list_agents">openclaw.list_agents</option>
+            <option value="openclaw.chat">openclaw.chat</option>
+          </select>
+          <label>Payload (JSON)</label>
+          <textarea id="commandPayload">{
+  "message": "hello from connector admin",
+  "agentId": "openclaw/default"
+}</textarea>
+          <button id="commandButton">Execute command locally</button>
+          <pre id="commandResult" class="output"></pre>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  hivee-connector:
+    build: .
+    container_name: hivee-connector
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "43137:43137"
+    volumes:
+      - ./data:/app/data
+      # Optional admin-only mode for docker discovery. Keep disabled by default.
+      # - /var/run/docker.sock:/var/run/docker.sock
