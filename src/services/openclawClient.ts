@@ -21,7 +21,7 @@ export interface OpenClawChatOutput {
 }
 
 export class OpenClawClient {
-  constructor(private readonly env: Env) {}
+  constructor(private readonly env: Env) { }
 
   getCandidates(): string[] {
     const seeded = (this.env.OPENCLAW_DISCOVERY_CANDIDATES || "")
@@ -165,13 +165,13 @@ export class OpenClawClient {
     for (const path of endpoints) {
       const body = path.includes("responses")
         ? {
-            model: input.agentId || "openclaw/default",
-            input: input.message
-          }
+          model: input.agentId || "openclaw/default",
+          input: input.message
+        }
         : {
-            model: input.agentId || "openclaw/default",
-            messages: [{ role: "user", content: input.message }]
-          };
+          model: input.agentId || "openclaw/default",
+          messages: [{ role: "user", content: input.message }]
+        };
 
       try {
         const res = await fetch(`${ensureTrailingSlashless(baseUrl)}${path}`, {
@@ -242,6 +242,8 @@ export class OpenClawClient {
     return await new Promise<OpenClawChatOutput>((resolve) => {
       let settled = false;
       let chunks: string[] = [];
+      let sawChallenge = false;
+      let sawMeaningfulText = false;
       const socket = new WebSocket(candidate, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         handshakeTimeout: input.timeoutMs || this.env.OPENCLAW_REQUEST_TIMEOUT_MS
@@ -252,7 +254,7 @@ export class OpenClawClient {
         settled = true;
         try {
           socket.close();
-        } catch {}
+        } catch { }
         resolve(payload);
       };
 
@@ -272,23 +274,41 @@ export class OpenClawClient {
       socket.on("message", (data) => {
         const raw = data.toString();
         chunks.push(raw);
+
         try {
           const parsed = JSON.parse(raw);
+
+          const eventName = String(parsed?.event || parsed?.type || "").toLowerCase();
+
+          if (eventName.includes("connect_challenge") || eventName.includes("challenge")) {
+            sawChallenge = true;
+            return;
+          }
+
           const maybeText = this.extractText(parsed);
           if (maybeText) {
+            sawMeaningfulText = true;
             clearTimeout(timer);
             finish({ ok: true, transport: "ws", text: maybeText, raw: parsed });
             return;
           }
+
           if (parsed?.type === "error" || parsed?.error) {
             clearTimeout(timer);
-            finish({ ok: false, transport: "ws", error: parsed?.error || parsed?.message || raw, raw: parsed });
+            finish({
+              ok: false,
+              transport: "ws",
+              error: parsed?.error || parsed?.message || raw,
+              raw: parsed
+            });
             return;
           }
         } catch {
-          if (raw.trim()) {
+          const trimmed = raw.trim();
+          if (trimmed) {
+            sawMeaningfulText = true;
             clearTimeout(timer);
-            finish({ ok: true, transport: "ws", text: raw, raw });
+            finish({ ok: true, transport: "ws", text: trimmed, raw });
             return;
           }
         }
@@ -302,9 +322,19 @@ export class OpenClawClient {
       socket.on("close", (_code, reason) => {
         clearTimeout(timer);
         if (!settled) {
+          if (sawChallenge && !sawMeaningfulText) {
+            finish({
+              ok: false,
+              transport: "ws",
+              error: "WS returned connect_challenge only; falling back to HTTP"
+            });
+            return;
+          }
+
           const text = chunks.join("\n").trim();
+
           finish(
-            text
+            sawMeaningfulText && text
               ? { ok: true, transport: "ws", text, raw: text }
               : { ok: false, transport: "ws", error: reason.toString() || "Socket closed before response" }
           );
