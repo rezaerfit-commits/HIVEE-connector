@@ -1,0 +1,44 @@
+services:
+  hivee-connector:
+    image: node:20-alpine
+    container_name: hivee-connector
+    working_dir: /app
+    command: >
+      sh -c "apk add --no-cache git curl &&
+      rm -rf /app/* &&
+      git clone https://github.com/rezaerfit-commits/HIVEE-connector.git /app &&
+      npm install &&
+      npm run dev"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: "development"
+      PORT: "43137"
+      HOST: "0.0.0.0"
+      LOG_LEVEL: "info"
+      DATA_DIR: "./data"
+      CONNECTOR_NAME: "Hivee Connector"
+      CONNECTOR_BIND_PUBLIC: "false"
+
+      CLOUD_BASE_URL: ""
+      CLOUD_WS_URL: ""
+      PAIRING_TOKEN: ""
+
+      # Use the Hostinger bridge port, not the public OpenClaw UI port.
+      OPENCLAW_BASE_URL: "http://openclaw:18790"
+      OPENCLAW_DISCOVERY_CANDIDATES: "http://openclaw:18790,http://openclaw-izjk-openclaw-1:18790"
+      OPENCLAW_TOKEN: "REPLACE_WITH_YOUR_OPENCLAW_GATEWAY_TOKEN"
+      OPENCLAW_TRANSPORT: "http"
+      OPENCLAW_WS_PATH: ""
+      OPENCLAW_REQUEST_TIMEOUT_MS: "20000"
+
+      ENABLE_DOCKER_DISCOVERY: "false"
+      DOCKER_SOCKET_PATH: "/var/run/docker.sock"
+
+    ports:
+      - "43137:43137"
+    networks:
+      - openclaw-izjk_default
+
+networks:
+  openclaw-izjk_default:
+    external: true
