@@ -17,8 +17,8 @@ await manager.discoverOpenClaw();
 
 // ── Auto-pair on startup if env vars provided ────────────────────────
 if (env.PAIRING_TOKEN && env.CLOUD_BASE_URL) {
-  const status = manager.getStatus();
-  if (status.pairing.status !== "paired") {
+  const s = manager.status();
+  if (s.pairing.status !== "paired") {
     console.log(`Auto-pairing with ${env.CLOUD_BASE_URL} ...`);
     try {
       const result = await manager.pair(env.CLOUD_BASE_URL, env.PAIRING_TOKEN);
@@ -28,7 +28,7 @@ if (env.PAIRING_TOKEN && env.CLOUD_BASE_URL) {
       console.error(`Auto-pair failed: ${e.message || e}`);
     }
   } else {
-    console.log(`Already paired (${status.pairing.connectorId}), skipping auto-pair.`);
+    console.log(`Already paired (${s.pairing.connectorId}), skipping auto-pair.`);
   }
 }
 
