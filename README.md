@@ -14,6 +14,22 @@ The connector is responsible for:
 
 ## Quick start
 
+### First-time user (clone and run)
+
+```bash
+git clone https://github.com/arieladhidevara/HIVEE-HUB.git
+cd HIVEE-HUB
+docker compose up -d --build
+```
+
+Then open:
+
+```text
+http://127.0.0.1:43137
+```
+
+On a VPS, open `http://<your-server-ip>:43137`.
+
 ### Local
 
 ```bash
