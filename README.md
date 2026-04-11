@@ -30,6 +30,70 @@ http://127.0.0.1:43137
 
 On a VPS, open `http://<your-server-ip>:43137`.
 
+After the UI opens:
+
+1. Fill OpenClaw settings in the **OpenClaw** card (`Base URL`, `Token`, `Discovery candidates`, `Transport`).
+2. Click **Save OpenClaw config**.
+3. Click **Rediscover OpenClaw**.
+
+### VPS access (Hostinger / cloud firewall)
+
+If browser shows timeout when opening `http://<server-ip>:43137`, the service is usually running but blocked by network firewall.
+
+Verify on VPS:
+
+```bash
+docker compose ps
+curl -m 5 http://127.0.0.1:43137/health
+sudo ss -lntp | grep 43137
+```
+
+If local health works, allow inbound TCP `43137` in your VPS provider firewall/security rules.
+
+If you use UFW:
+
+```bash
+sudo ufw allow 43137/tcp
+sudo ufw reload
+sudo ufw status
+```
+
+### Reverse proxy option (Traefik on 80/443)
+
+If your VPS only exposes `80/443`, put Hivee Connector behind Traefik.
+
+Create `docker-compose.traefik.yml`:
+
+```yaml
+services:
+  hivee-connector:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hivee.rule=Host(`hivee.your-domain.com`)"
+      - "traefik.http.routers.hivee.entrypoints=websecure"
+      - "traefik.http.routers.hivee.tls=true"
+      - "traefik.http.services.hivee.loadbalancer.server.port=43137"
+    networks:
+      - default
+      - traefik_proxy
+
+networks:
+  traefik_proxy:
+    external: true
+    name: traefik_default
+```
+
+Run with:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build
+```
+
+Notes:
+
+- Replace `hivee.your-domain.com` with your domain.
+- Your external Traefik network name may differ; check with `docker network ls`.
+
 ### Local
 
 ```bash
